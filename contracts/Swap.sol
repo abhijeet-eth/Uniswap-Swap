@@ -77,6 +77,10 @@ contract Swap {
       payable(msg.sender).transfer(_amount);
   }
 
+  function sendTokenToContract(uint _amount) external {
+    IERC20(DAI).transferFrom(msg.sender,address(this),_amount);
+  }
+
   function ethBalance() external view returns(uint) {
       return address(this).balance;
   }

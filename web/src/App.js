@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Swap from './Swap.json';
 import { ethers } from "ethers";
 import './App.css';
+import DAI_ABI from "./DAI.json"
 
 function App() {
-    let contractAddress = "0x7623e1290ED3ebf64bf80004EF5cce3A227e98Ec";
+    let contractAddress = "0x8e326104B8171fc1EB7A96905eC5d7CFcC3aaE37";
+    let DAIContract = "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa";
 
     let [blockchainProvider, setBlockchainProvider] = useState(undefined);
     let [metamask, setMetamask] = useState(undefined);
@@ -17,6 +19,8 @@ function App() {
 
     const [contract, setReadContract] = useState(null);
     const [writeContract, setWriteContract] = useState(null);
+    const [DAI, setDAI] = useState(null);
+    const [DAI2, setDAI2] = useState(null);
 
     const [output, setOutput] = useState(null);
     const [tokenInput, setTokenInput] = useState(null);
@@ -24,8 +28,8 @@ function App() {
     const [amountInput, setAmountInput] = useState(null);
     const [amountInput2, setAmountInput2] = useState(null);
     const [amountInput3, setAmountInput3] = useState(null);
-    const [userETHBalance, setUserETHBalance] = useState(0);
-    const [contractETHBalance, setContractETHBalance] = useState(0);
+    const [userETHBalances, setUserETHBalance] = useState();
+    const [contractETHBalance, setContractETHBalance] = useState(null);
 
     let alertMessage;
 
@@ -87,6 +91,12 @@ function App() {
                 let tempContract2 = new ethers.Contract(contractAddress, Swap, signer);
                 setWriteContract(tempContract2); //writeContract
 
+                let DAIRead = new ethers.Contract(DAIContract, DAI_ABI, provider);
+                setDAI(DAIRead) //DAI
+                let DAIWrite = new ethers.Contract(DAIContract, DAI_ABI, signer);
+                setDAI2(DAIWrite) //DAI2
+
+
             } else setError("Could not connect to any blockchain!!");
 
             return {
@@ -112,22 +122,22 @@ function App() {
             setAccounts(accounts[0]);
         }
     }
+    const init = async () => {
 
-    useEffect(() => {
-        const init = async () => {
+        const { provider, metamaskProvider, signer, network } = await connect();
 
-            const { provider, metamaskProvider, signer, network } = await connect();
+        const accounts = await metamaskProvider.listAccounts();
+        console.log(accounts[0]);
+        setAccounts(accounts[0]);
 
-            const accounts = await metamaskProvider.listAccounts();
-            console.log(accounts[0]);
-            setAccounts(accounts[0]);
-
-            if (typeof accounts[0] == "string") {
-                setEtherBalance(ethers.utils.formatEther(
-                    Number(await metamaskProvider.getBalance(accounts[0])).toString()
-                ));
-            }
+        if (typeof accounts[0] == "string") {
+            setEtherBalance(ethers.utils.formatEther(
+                Number(await metamaskProvider.getBalance(accounts[0])).toString()
+            ));
         }
+    }
+    useEffect(() => {
+
 
         init();
 
@@ -143,13 +153,14 @@ function App() {
 
     useEffect(() => {
         (async () => {
-            if (typeof metamask == 'object' && typeof metamask.getBalance == 'function'
-                && typeof loggedInAccount == "string") {
-                setEtherBalance(ethers.utils.formatEther(
-                    Number(await metamask.getBalance(loggedInAccount)).toString()
-                ));
+            init();
+            // if (typeof metamask == 'object' && typeof metamask.getBalance == 'function'
+            //     && typeof loggedInAccount == "string") {
+            //     setEtherBalance(ethers.utils.formatEther(
+            //         Number(await metamask.getBalance(loggedInAccount)).toString()
+            //     ));
 
-            }
+            // }
         })()
     }, [loggedInAccount]);
 
@@ -197,64 +208,142 @@ function App() {
     }
 
     const swapForETH = async (tokenIn, amountIn) => {
+        //console.log(metamaskSigner)
+        const signerAddress = await metamaskSigner.getAddress();
+
+        const tokenBal = await DAI.balanceOf(signerAddress);
+        //tokenBal = ethers.utils.formatEther(tokenBal);
+        console.log(String(tokenBal))
+        let allowances = String(await DAI.allowance(signerAddress, contractAddress));
+
+        // // allowances = ethers.utils.formatEther(allowances);
+        amountIn = String(ethers.utils.parseEther(amountIn));
+
+        if (allowances < amountIn) {
+            await DAI2.approve(contractAddress, tokenBal, { from: signerAddress })
+        }
+
+        await writeContract.sendTokenToContract(amountIn);
+
         let weth = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
-        amountIn = await ethers.utils.parseEther(amountIn);
+
         await writeContract.swap(tokenIn, weth, amountIn, 0);
 
     }
 
     const sendEtherToUser = async (amount) => {
+        amount = ethers.utils.parseEther(amount)
         await writeContract.sendEtherToUser(amount);
     }
 
-    const userBalance = async () => {
-        let val = await contract.userETHBalance()
+    const userETHBalance = async () => {
+        const signerAddress = await metamaskSigner.getAddress();
+        let val = await contract.userETHBalance({ from: signerAddress });
+        
+        val = String(ethers.utils.formatEther(val));
+        console.log(String(val))
         setUserETHBalance(val)
     }
 
     const contractEtherBalance = async () => {
-        let val = contract.ethBalance();
-        setContractETHBalance(val);
+        let val = await contract.ethBalance();
+        val = ethers.utils.formatUnits(val, "ether");
+        setContractETHBalance(String(val));
     }
 
+    if (isError) {
+        return (
+            <>
+                
+                <div className="alert alert-danger" role="alert">Error</div>;
+            </>
+        )
+    } else if (!isReady()) {
+
+        return (<p>Loading...</p>)
+
+    } else {
+
     return (
-        <div className="App">
-            Contract Address: {contractAddress}
-            <form className="input" onSubmit={getAmountOutput}>
-                <input id='tokenIn' value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} type='text' placeholder="Address of Token " />
-                <input id='amountIn' value={amountInput} onChange={(event) => setAmountInput(event.target.value)} type='text' placeholder="Amount" />
-                <button type="button" className="btn btn-warning" onClick={() => getAmountOutput(tokenInput, amountInput)}> Get Output </button>
-                {output}
-            </form>
+        <div className="container">
+            <nav className="navbar navbar-light bg-light">
+                <a className="navbar-brand" href="#">Navbar</a>
+            </nav>
+            <div class="row">
 
-            <form className="input" onSubmit={swapForETH}>
-                <input id='tokenIn' value={tokenInput2} onChange={(event) => setTokenInput2(event.target.value)} type='text' placeholder="Address of Token to swap" />
-                <input id='amountIn' value={amountInput2} onChange={(event) => setAmountInput2(event.target.value)} type='text' placeholder="Amount to swap" />
-                <button type="button" className="btn btn-warning" onClick={() => swapForETH(tokenInput2, amountInput2)}> Swap </button>
+                <div class="col-sm">
 
-            </form>
+                    <div class="card" style={{ width: "18rem;" }}>
+                        <div class="card-body">
+                            <h5 class="card-title">Get Amount Output</h5>
+                            <p class="card-text">Returns Ether as output for given amount of token in. Helpful in doing calculation before doing actual swap  </p>
+                            <form className="input" onSubmit={getAmountOutput}>
+                                <input id='tokenIn' value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} type='text' placeholder="Address of Token " />
+                                <input id='amountIn' value={amountInput} onChange={(event) => setAmountInput(event.target.value)} type='text' placeholder="Amount" />
+                                <button type="button" className="btn btn-primary btn-sm" onClick={() => getAmountOutput(tokenInput, amountInput)}> Get Output </button>
 
-            Contract ETH Balance: {contractETHBalance}
+                            </form>
+                            <p class="card-text">{output}</p>
+                        </div>
+                    </div>
 
-            <form className="input" onSubmit={sendEtherToUser}>
-                <input id='tokenIn' value={amountInput3} onChange={(event) => setAmountInput3(event.target.value)} type='number' placeholder="Ether amount to redeem" />
-                <button type="button" className="btn btn-warning" onClick={() => sendEtherToUser(amountInput3)}> Redeem ETH </button>
 
-            </form>
 
-            User's Eth Balance: {userETHBalance}
+                </div>
+                <div class="col-sm">
+                    <div class="card" style={{ width: "18rem;" }}>
+                        <div class="card-body">
+                            <h5 class="card-title">Swap Tokens for ETH</h5>
 
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
+                            <form className="input" onSubmit={swapForETH}>
+                                <input id='tokenIn' value={tokenInput2} onChange={(event) => setTokenInput2(event.target.value)} type='text' placeholder="Address of Token to swap" />
+                                <input id='amountIn' value={amountInput2} onChange={(event) => setAmountInput2(event.target.value)} type='text' placeholder="Amount to swap" />
+                                <button type="button" className="btn btn-primary btn-sm" onClick={() => swapForETH(tokenInput2, amountInput2)}> Swap </button>
 
-            DAI address: 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa
-
+                            </form>
+                            <div className = "font-weight-normal">
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="card" style={{ width: "18rem;" }}>
+                        <div class="card-body">
+                            <h5 class="card-title">Redeem Ether</h5>
+                            <form className="input" onSubmit={sendEtherToUser}>
+                                <input id='tokenIn' value={amountInput3} onChange={(event) => setAmountInput3(event.target.value)} type='number' placeholder="Ether amount to redeem" />
+                                <button type="button" className="btn btn-primary btn-sm" onClick={() => sendEtherToUser(amountInput3)}> Redeem ETH </button>
+                            </form>
+                            
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="col-sm">
+                    <div class="card" style={{ width: "18rem;" }}>
+                        <div class="card-body" >
+                            <button type="button" className="btn btn-primary btn-sm" onClick={() => contractEtherBalance()}> Contract ETH Bal </button>
+                            {contractETHBalance}
+                            <br /> <br />
+                            <button type="button" className="btn btn-primary btn-sm" onClick={() => userETHBalance()}> User ETH Bal </button>
+                            {userETHBalances}
+                            <br /> <br />
+                            <div className = "font-italic">
+                            <h6>Contract Address:</h6> {contractAddress}
+                            </div>
+                            <br />
+                            <div className = "font-italic">
+                            <h6>DAI address:</h6> 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
+    }
 }
 
 export default App;
