@@ -5,9 +5,9 @@ import './App.css';
 import DAI_ABI from "./DAI.json"
 
 function App() {
-    let contractAddress = "0x932B8A1e8e9fAc2Bb94Aa8cF0EA7f96b9e5ABC48"; //ropsten
+    let contractAddress = "0xE04fA508CF1017B6dece32c450588A66Ca6282a8"; //ropsten
     // 0x8e326104B8171fc1EB7A96905eC5d7CFcC3aaE37 rinkeby
-    let DAIContract = "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa";
+    let DAIContract = "0x31F42841c2db5173425b5223809CF3A38FEde360";
 
     let [blockchainProvider, setBlockchainProvider] = useState(undefined);
     let [metamask, setMetamask] = useState(undefined);
@@ -224,17 +224,17 @@ function App() {
             await DAI2.approve(contractAddress, tokenBal, { from: signerAddress })
         }
 
-        await writeContract.sendTokenToContract(amountIn);
+        await writeContract.sendTokenToContract(amountIn, { gasLimit: 500000 });
 
         let weth = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
 
-        await writeContract.swap(tokenIn, weth, amountIn, 0);
+        await writeContract.swap(tokenIn, weth, amountIn, 0, { gasLimit: 500000 });
 
     }
 
     const sendEtherToUser = async (amount) => {
         amount = ethers.utils.parseEther(amount)
-        await writeContract.sendEtherToUser(amount);
+        await writeContract.withdrawETH(amount);
     }
 
     const userETHBalance = async () => {
@@ -295,6 +295,7 @@ function App() {
                         <div class="card" style={{ width: "18rem;" }}>
                             <div class="card-body">
                                 <h5 class="card-title">Swap Tokens for ETH</h5>
+                                <p class="card-text">Users can swap their token for ETH </p>
 
                                 <form className="input" onSubmit={swapForETH}>
                                     <input id='tokenIn' value={tokenInput2} onChange={(event) => setTokenInput2(event.target.value)} type='text' placeholder="Address of Token to swap" />
@@ -312,6 +313,7 @@ function App() {
                         <div class="card" style={{ width: "18rem;" }}>
                             <div class="card-body">
                                 <h5 class="card-title">Redeem Ether</h5>
+                                <p class="card-text">User can redeem full/partial ETH by providing the amount.</p>
                                 <form className="input" onSubmit={sendEtherToUser}>
                                     <input id='tokenIn' value={amountInput3} onChange={(event) => setAmountInput3(event.target.value)} type='number' placeholder="Ether amount to redeem" />
                                     <button type="button" className="btn btn-primary btn-sm" onClick={() => sendEtherToUser(amountInput3)}> Redeem ETH </button>
@@ -335,7 +337,7 @@ function App() {
                                 </div>
                                 <br />
                                 <div className="font-italic">
-                                    <h6>DAI address:</h6> 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa
+                                    <h6>DAI address(Input Token):</h6> {DAIContract}
                                 </div>
 
                             </div>

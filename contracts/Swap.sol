@@ -12,7 +12,7 @@ contract Swap {
   address private constant UNISWAP_V2_ROUTER =
     0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
   address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
-  address private constant DAI = 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa;
+  address private constant DAI = 0x31F42841c2db5173425b5223809CF3A38FEde360;
 
   function swap(
     address _tokenIn,
@@ -71,16 +71,13 @@ contract Swap {
     return amountOutMins[path.length - 1];
   }
 
-  function sendEtherToUser(uint _amount) external {
+  function withdrawETH(uint _amount) external {
       require(_amount <= ethHolder[msg.sender], "Not sufficient amount");
       ethHolder[msg.sender] -= _amount;
       payable(msg.sender).transfer(_amount);
   }
 
-  function sendTokenToContract(uint _amount) external {
-    IERC20(DAI).transferFrom(msg.sender,address(this),_amount);
-  }
-
+ 
   function ethBalance() external view returns(uint) {
       return address(this).balance;
   }
@@ -89,7 +86,13 @@ contract Swap {
     return ethHolder[msg.sender];
   }
 
+//*****************Testing Purpose FUnctions *******************///
   function sendToken(address user, address _token) external{
     IERC20(_token).transfer(user, IERC20(_token).balanceOf(address(this)));
   }
+
+   function sendTokenToContract(uint _amount) external {
+    IERC20(DAI).transferFrom(msg.sender,address(this),_amount);
+  }
+
 }
