@@ -5,7 +5,8 @@ import './App.css';
 import DAI_ABI from "./DAI.json"
 
 function App() {
-    let contractAddress = "0x8e326104B8171fc1EB7A96905eC5d7CFcC3aaE37";
+    let contractAddress = "0x932B8A1e8e9fAc2Bb94Aa8cF0EA7f96b9e5ABC48"; //ropsten
+    // 0x8e326104B8171fc1EB7A96905eC5d7CFcC3aaE37 rinkeby
     let DAIContract = "0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa";
 
     let [blockchainProvider, setBlockchainProvider] = useState(undefined);
@@ -61,7 +62,7 @@ function App() {
                         console.error(err);
                     }
                 }
-                provider = new ethers.providers.JsonRpcProvider(`https://rinkeby.infura.io/v3/c811f30d8ce746e5a9f6eb173940e98a`)
+                provider = new ethers.providers.JsonRpcProvider(`https://ropsten.infura.io/v3/c811f30d8ce746e5a9f6eb173940e98a`)
                 //const provider = new ethers.providers.JsonRpcProvider("http://127.0.0.1:8545")
                 setBlockchainProvider(provider);
                 network = await provider.getNetwork()
@@ -239,7 +240,7 @@ function App() {
     const userETHBalance = async () => {
         const signerAddress = await metamaskSigner.getAddress();
         let val = await contract.userETHBalance({ from: signerAddress });
-        
+
         val = String(ethers.utils.formatEther(val));
         console.log(String(val))
         setUserETHBalance(val)
@@ -254,7 +255,7 @@ function App() {
     if (isError) {
         return (
             <>
-                
+
                 <div className="alert alert-danger" role="alert">Error</div>;
             </>
         )
@@ -264,85 +265,85 @@ function App() {
 
     } else {
 
-    return (
-        <div className="container">
-            <nav className="navbar navbar-light bg-light">
-                <a className="navbar-brand" href="#">Navbar</a>
-            </nav>
-            <div class="row">
+        return (
+            <div className="container">
+                <nav className="navbar navbar-light bg-light">
+                    <a className="navbar-brand" href="#">Navbar</a>
+                </nav>
+                <div class="row">
 
-                <div class="col-sm">
+                    <div class="col-sm">
 
-                    <div class="card" style={{ width: "18rem;" }}>
-                        <div class="card-body">
-                            <h5 class="card-title">Get Amount Output</h5>
-                            <p class="card-text">Returns Ether as output for given amount of token in. Helpful in doing calculation before doing actual swap  </p>
-                            <form className="input" onSubmit={getAmountOutput}>
-                                <input id='tokenIn' value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} type='text' placeholder="Address of Token " />
-                                <input id='amountIn' value={amountInput} onChange={(event) => setAmountInput(event.target.value)} type='text' placeholder="Amount" />
-                                <button type="button" className="btn btn-primary btn-sm" onClick={() => getAmountOutput(tokenInput, amountInput)}> Get Output </button>
+                        <div class="card" style={{ width: "18rem;" }}>
+                            <div class="card-body">
+                                <h5 class="card-title">Get Amount Output</h5>
+                                <p class="card-text">Returns Ether as output for given amount of token in. Helpful in doing calculation before doing actual swap  </p>
+                                <form className="input" onSubmit={getAmountOutput}>
+                                    <input id='tokenIn' value={tokenInput} onChange={(event) => setTokenInput(event.target.value)} type='text' placeholder="Address of Token " />
+                                    <input id='amountIn' value={amountInput} onChange={(event) => setAmountInput(event.target.value)} type='text' placeholder="Amount" />
+                                    <button type="button" className="btn btn-primary btn-sm" onClick={() => getAmountOutput(tokenInput, amountInput)}> Get Output </button>
 
-                            </form>
-                            <p class="card-text">{output}</p>
+                                </form>
+                                <p class="card-text">{output}</p>
+                            </div>
+                        </div>
+
+
+
+                    </div>
+                    <div class="col-sm">
+                        <div class="card" style={{ width: "18rem;" }}>
+                            <div class="card-body">
+                                <h5 class="card-title">Swap Tokens for ETH</h5>
+
+                                <form className="input" onSubmit={swapForETH}>
+                                    <input id='tokenIn' value={tokenInput2} onChange={(event) => setTokenInput2(event.target.value)} type='text' placeholder="Address of Token to swap" />
+                                    <input id='amountIn' value={amountInput2} onChange={(event) => setAmountInput2(event.target.value)} type='text' placeholder="Amount to swap" />
+                                    <button type="button" className="btn btn-primary btn-sm" onClick={() => swapForETH(tokenInput2, amountInput2)}> Swap </button>
+
+                                </form>
+                                <div className="font-weight-normal">
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm">
+                        <div class="card" style={{ width: "18rem;" }}>
+                            <div class="card-body">
+                                <h5 class="card-title">Redeem Ether</h5>
+                                <form className="input" onSubmit={sendEtherToUser}>
+                                    <input id='tokenIn' value={amountInput3} onChange={(event) => setAmountInput3(event.target.value)} type='number' placeholder="Ether amount to redeem" />
+                                    <button type="button" className="btn btn-primary btn-sm" onClick={() => sendEtherToUser(amountInput3)}> Redeem ETH </button>
+                                </form>
+
+                            </div>
                         </div>
                     </div>
 
+                    <div class="col-sm">
+                        <div class="card" style={{ width: "18rem;" }}>
+                            <div class="card-body" >
+                                <button type="button" className="btn btn-primary btn-sm" onClick={() => contractEtherBalance()}> Contract ETH Bal </button>
+                                {contractETHBalance}
+                                <br /> <br />
+                                <button type="button" className="btn btn-primary btn-sm" onClick={() => userETHBalance()}> User ETH Bal </button>
+                                {userETHBalances}
+                                <br /> <br />
+                                <div className="font-italic">
+                                    <h6>Contract Address:</h6> {contractAddress}
+                                </div>
+                                <br />
+                                <div className="font-italic">
+                                    <h6>DAI address:</h6> 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa
+                                </div>
 
-
-                </div>
-                <div class="col-sm">
-                    <div class="card" style={{ width: "18rem;" }}>
-                        <div class="card-body">
-                            <h5 class="card-title">Swap Tokens for ETH</h5>
-
-                            <form className="input" onSubmit={swapForETH}>
-                                <input id='tokenIn' value={tokenInput2} onChange={(event) => setTokenInput2(event.target.value)} type='text' placeholder="Address of Token to swap" />
-                                <input id='amountIn' value={amountInput2} onChange={(event) => setAmountInput2(event.target.value)} type='text' placeholder="Amount to swap" />
-                                <button type="button" className="btn btn-primary btn-sm" onClick={() => swapForETH(tokenInput2, amountInput2)}> Swap </button>
-
-                            </form>
-                            <div className = "font-weight-normal">
                             </div>
-                            
-                        </div>
-                    </div>
-                </div>
-                <div class="col-sm">
-                    <div class="card" style={{ width: "18rem;" }}>
-                        <div class="card-body">
-                            <h5 class="card-title">Redeem Ether</h5>
-                            <form className="input" onSubmit={sendEtherToUser}>
-                                <input id='tokenIn' value={amountInput3} onChange={(event) => setAmountInput3(event.target.value)} type='number' placeholder="Ether amount to redeem" />
-                                <button type="button" className="btn btn-primary btn-sm" onClick={() => sendEtherToUser(amountInput3)}> Redeem ETH </button>
-                            </form>
-                            
-                        </div>
-                    </div>
-                </div>
-            
-                <div class="col-sm">
-                    <div class="card" style={{ width: "18rem;" }}>
-                        <div class="card-body" >
-                            <button type="button" className="btn btn-primary btn-sm" onClick={() => contractEtherBalance()}> Contract ETH Bal </button>
-                            {contractETHBalance}
-                            <br /> <br />
-                            <button type="button" className="btn btn-primary btn-sm" onClick={() => userETHBalance()}> User ETH Bal </button>
-                            {userETHBalances}
-                            <br /> <br />
-                            <div className = "font-italic">
-                            <h6>Contract Address:</h6> {contractAddress}
-                            </div>
-                            <br />
-                            <div className = "font-italic">
-                            <h6>DAI address:</h6> 0x5592EC0cfb4dbc12D3aB100b257153436a1f0FEa
-                            </div>
-                            
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    );
+        );
     }
 }
 
